@@ -1,0 +1,47 @@
+---
+
+AWSTemplateFormatVersion: "2010-09-09"
+Description: CloudFormation template to create IAM policy, role, user for dnsUpdater
+
+Parameters:
+
+  dnsZoneID:
+    Description: DNS Zone ID of the route53 domain that has the record to be updated
+    Type: AWS::Route53::HostedZone::Id
+
+  service:
+    Description: Service name, basically a description that'll be used in resource names
+    Type: String
+    Default: dnsUpdater
+
+Resources:
+
+  dnsUpdaterIAMPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+            - route53:ChangeResourceRecordSets
+          Resource: !Sub "arn:aws:route53:::hostedzone/${dnsZoneID}"
+      ManagedPolicyName: !Sub "${service}-iam-userPolicy"
+
+  dnsUpdaterUser:
+    Type: AWS::IAM::User
+    Properties:
+      ManagedPolicyArns:
+        - !Ref dnsUpdaterIAMPolicy
+      Tags:
+        - Key: "Name"
+          Value: !Sub "${service}-iam-user"
+        - Key: "Service"
+          Value: !Ref service
+      UserName: !Sub "${service}-iam-user"
+
+Outputs:
+  dnsUpdaterIAMPolicyArn: 
+    Value: !Ref dnsUpdaterIAMPolicy
+  dnsUpdaterUserArn:
+    Value: !GetAtt dnsUpdaterUser.Arn
